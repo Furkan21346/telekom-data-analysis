@@ -5,7 +5,7 @@ from datetime import datetime #this module is used to work with date and time, a
 
 BASE_STATIONS = ["Kizilay_Center", "Tunali_Hilmi", "Cayyolu_Gordion", "Eryaman_Optimum", "Batikent_Square"]
 USAGE_TYPES = ["Data_Download", "Voice_Call", "SMS", "Video_Stream"]
-# Since in real life most of the connections are successful, we will have higher probability for successful connection
+# Since in real life most of the connections are successful, we will have higher probability for successful connection when making a random choice
 STATUSES = ["Success", "Success", "Success", "Success", "Error", "Connection_Dropped"] 
 
 def generate_telecom_data():
