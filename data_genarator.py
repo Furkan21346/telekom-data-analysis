@@ -2,6 +2,7 @@ import json #this module is used to convert Python objects into JSON format and 
 import time #this module is used to introduce delays in the execution of the program.
 import random #this module is used to generate random numbers and make random selections from lists.
 from datetime import datetime #this module is used to work with date and time, allowing us to get the current timestamp.
+from confluent_kafka import Producer # we are  importing confluent_kafka to use Producer class
 
 BASE_STATIONS = ["Kizilay_Center", "Tunali_Hilmi", "Cayyolu_Gordion", "Eryaman_Optimum", "Batikent_Square"]
 USAGE_TYPES = ["Data_Download", "Voice_Call", "SMS", "Video_Stream"]
@@ -17,20 +18,37 @@ def generate_telecom_data():
         "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     }
     return data
+# Kafka Delivery Callback Function
+def delivery_report(err, msg):
+    if err is not None:
+        print(f"Message delivery failed: {err}")
+    else:
+        print(f"Message delivered to {msg.topic()} [{msg.partition()}]")
 
 if __name__ == "__main__":
-    print("Data generation started. Press CTRL+C in the terminal to stop.\n")
+    producer_config = {
+        'bootstrap.servers': 'localhost:9092'
+    }
+    
+    producer = Producer(producer_config)
+    topic_name = "telecom_traffic"
+    print("Data generation and Kafka streaming started. Press CTRL+C to stop.\n")
     try:
         while True:
             new_record = generate_telecom_data()
             
             # we are converting the dictionary to JSON format.
             json_data = json.dumps(new_record)
-            
-            print(json_data)
-            
+            # Send data to Kafka
+            producer.produce(topic=topic_name, value=json_data.encode('utf-8'), callback=delivery_report)
+            # Trigger callbacks
+            producer.poll(0)
             # we are introducing a delay of 1 second between each data record.
             time.sleep(1)
             
     except KeyboardInterrupt:
-        print("\nData generation stopped by the user.")
+        print("\nData generation stopped by the user. Flushing remaining messages...")
+    finally:
+        # Wait for any outstanding messages to be delivered
+        producer.flush()
+        print("Kafka producer closed gracefully.")
